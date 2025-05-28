@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "tsk": {
+      "command": "node",
+      "args": ["/absolute/path/to/tsk-mcp/dist/index.js"],
+      "env": {}
+    }
+  }
+}
