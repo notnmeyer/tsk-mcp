@@ -3,17 +3,32 @@ desc = "Run the MCP server in development mode"
 cmds = ["npm run dev"]
 
 [tasks.deps]
-cmds = "npm i"
+cmds = ["npm i"]
 
 [tasks.build]
 desc = "Build the project"
 deps = [["deps"]]
 cmds = ["npm run build"]
 
+#
+# test
+#
 [tasks.test]
-desc = "Run tests"
-cmds = ["npm test"]
+cmds = ["npm run test"]
 
+[tasks."test:demo"]
+cmds = ["npm run demo"]
+
+[tasks."test:fetch"]
+cmds = ["npm run test:fetch"]
+
+[tasks."test:all"]
+deps = [["test"], ["test:demo"], ["test:fetch"]]
+cmds = ["echo Done!"]
+
+#
+# lint
+# 
 [tasks."lint:check"]
 desc = "check files"
 cmds = ["npx prettier --check ."]

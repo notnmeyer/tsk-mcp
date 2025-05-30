@@ -1,14 +1,14 @@
 import {
   updateReferenceWithSiteContent,
   tskReference,
-} from "./src/data/reference.js";
+} from "./data/reference.js";
 
 async function testFetch() {
   console.log("Testing site documentation fetch...\n");
 
   // Show initial state
   console.log("Initial state:");
-  tskReference.siteDocs.forEach((doc) => {
+  tskReference.siteDocs.forEach((doc: any) => {
     console.log(
       `- ${doc.title}: ${doc.content ? "Has content" : "No content"}`,
     );
@@ -24,7 +24,7 @@ async function testFetch() {
 
     // Show updated state
     console.log("Updated state:");
-    tskReference.siteDocs.forEach((doc) => {
+    tskReference.siteDocs.forEach((doc: any) => {
       console.log(`- ${doc.title}:`);
       console.log(`  URL: ${doc.url}`);
       console.log(

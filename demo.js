@@ -1,10 +1,21 @@
 #!/usr/bin/env node
 
 import { handleToolCall } from "./dist/handlers/tools.js";
+import { updateReferenceWithSiteContent } from "./dist/data/reference.js";
 
 // Demo function to test MCP server capabilities
 async function demo() {
   console.log("🚀 tsk MCP Server Demo\n");
+
+  // Fetch documentation content first
+  console.log("Fetching documentation content...");
+  try {
+    await updateReferenceWithSiteContent();
+    console.log("Documentation fetched successfully!\n");
+  } catch (error) {
+    console.error("Error fetching documentation:", error);
+    console.log("Continuing with demo using cached content if available...\n");
+  }
 
   // Test 1: Get Core Concepts documentation
   console.log("1. Getting Core Concepts documentation:");
