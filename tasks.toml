@@ -1,0 +1,23 @@
+[tasks.dev]
+desc = "Run the MCP server in development mode"
+cmds = ["npm run dev"]
+
+[tasks.deps]
+cmds = "npm i"
+
+[tasks.build]
+desc = "Build the project"
+deps = [["deps"]]
+cmds = ["npm run build"]
+
+[tasks.test]
+desc = "Run tests"
+cmds = ["npm test"]
+
+[tasks."lint:check"]
+desc = "check files"
+cmds = ["npx prettier --check ."]
+
+[tasks."lint:fix"]
+desc = "fix files"
+cmds = ["npx prettier --write ."]

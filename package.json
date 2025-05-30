@@ -1,7 +1,7 @@
 {
   "name": "tsk-mcp-server",
   "version": "1.0.0",
-  "description": "MCP server for tsk task runner - provides feature and syntax reference",
+  "description": "MCP server for tsk task runner - provides access to official documentation",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -11,9 +11,16 @@
     "demo": "node demo.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:fetch": "npm run build && node dist/test-fetch.js",
     "clean": "rm -rf dist"
   },
-  "keywords": ["mcp", "server", "tsk", "task-runner", "toml"],
+  "keywords": [
+    "mcp",
+    "server",
+    "tsk",
+    "task-runner",
+    "toml"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -28,16 +35,27 @@
   },
   "jest": {
     "preset": "ts-jest/presets/default-esm",
-    "extensionsToTreatAsEsm": [".ts"],
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
     "testEnvironment": "node",
-    "roots": ["<rootDir>/src"],
-    "testMatch": ["**/__tests__/**/*.test.ts"],
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
     "collectCoverageFrom": [
       "src/**/*.ts",
       "!src/**/*.d.ts"
     ],
     "transform": {
-      "^.+\\.ts$": ["ts-jest", { "useESM": true }]
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
     },
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1"

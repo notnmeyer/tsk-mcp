@@ -1,310 +1,279 @@
-import { handleToolCall } from '../handlers/tools';
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { handleToolCall } from "../handlers/tools";
+import { CallToolRequest } from "@modelcontextprotocol/sdk/types.js";
+import { tskReference } from "../data/reference";
+import { SiteDoc } from "../types/index.js";
 
-describe('MCP Tool Handlers', () => {
-  describe('tsk_lookup_command', () => {
-    it('should return documentation for a valid command', async () => {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'tsk_lookup_command',
-          arguments: { command: 'run' }
-        }
-      };
+describe("MCP Tool Handlers", () => {
+  describe("tsk_get_site_docs", () => {
+    // Store original docs to restore after tests
+    let originalDocs: SiteDoc[] = [];
 
-      const result = await handleToolCall(request);
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0]?.type).toBe('text');
-      expect((result.content[0] as any).text).toContain('tsk run');
-      expect((result.content[0] as any).text).toContain('Run a specific task');
+    beforeAll(() => {
+      // Save original docs
+      originalDocs = JSON.parse(JSON.stringify(tskReference.siteDocs));
+
+      // Replace with test data that we control
+      tskReference.siteDocs = [
+        {
+          url: "https://example.com/doc1",
+          title: "Test Doc 1",
+          content:
+            "This is test document 1 with information about init command.",
+          lastFetched: new Date("2023-01-01"),
+        },
+        {
+          url: "https://example.com/doc2",
+          title: "Installation Guide",
+          content:
+            "Installation guide content here. Use brew install or download from releases.",
+          lastFetched: new Date("2023-01-01"),
+        },
+        {
+          url: "https://example.com/doc3",
+          title: "Usage Documentation",
+        },
+      ] as SiteDoc[];
     });
 
-    it('should return error for invalid command', async () => {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'tsk_lookup_command',
-          arguments: { command: 'invalid' }
-        }
-      };
-
-      const result = await handleToolCall(request);
-      expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('Command "invalid" not found');
-    });
-  });
-
-  describe('tsk_lookup_syntax', () => {
-    it('should return syntax documentation for a valid key', async () => {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'tsk_lookup_syntax',
-          arguments: { key: 'tasks' }
-        }
-      };
-
-      const result = await handleToolCall(request);
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0]?.type).toBe('text');
-      expect((result.content[0] as any).text).toContain('tasks');
-      expect((result.content[0] as any).text).toContain('Table containing all task definitions');
+    afterAll(() => {
+      // Restore original docs
+      tskReference.siteDocs = originalDocs as SiteDoc[];
     });
 
-    it('should return error for invalid key', async () => {
+    it("should return all site documentation when no filters provided", async () => {
       const request: CallToolRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'tsk_lookup_syntax',
-          arguments: { key: 'nonexistent' }
-        }
+          name: "tsk_get_site_docs",
+          arguments: {},
+        },
       };
 
       const result = await handleToolCall(request);
       expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('No syntax documentation found');
-    });
-  });
+      expect(result.content[0]?.type).toBe("text");
+      const text = (result.content[0] as any).text;
 
-  describe('tsk_list_commands', () => {
-    it('should return list of all available commands', async () => {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'tsk_list_commands',
-          arguments: {}
+      // Test for all doc titles in our test data
+      tskReference.siteDocs.forEach((doc) => {
+        if (doc.title) {
+          expect(text).toContain(doc.title);
         }
-      };
-
-      const result = await handleToolCall(request);
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0]?.type).toBe('text');
-      expect((result.content[0] as any).text).toContain('Available tsk Commands');
-      expect((result.content[0] as any).text).toContain('run');
-      expect((result.content[0] as any).text).toContain('list');
-      expect((result.content[0] as any).text).toContain('init');
-    });
-  });
-
-  describe('tsk_get_completion', () => {
-    it('should return completions for task context', async () => {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'tsk_get_completion',
-          arguments: { 
-            context: '[tasks.build]',
-            line_prefix: ''
-          }
-        }
-      };
-
-      const result = await handleToolCall(request);
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0]?.type).toBe('text');
-      
-      const completionResult = JSON.parse((result.content[0] as any).text);
-      expect(completionResult.suggestions).toBeDefined();
-      expect(completionResult.suggestions.length).toBeGreaterThan(0);
-      expect(completionResult.suggestions.some((s: any) => s.label === 'desc')).toBe(true);
+      });
     });
 
-    it('should return root-level completions', async () => {
+    it("should filter documentation by title", async () => {
+      const targetTitle = "Installation Guide";
       const request: CallToolRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'tsk_get_completion',
-          arguments: { 
-            context: '',
-            line_prefix: ''
-          }
-        }
+          name: "tsk_get_site_docs",
+          arguments: { title: "Installation" },
+        },
       };
 
       const result = await handleToolCall(request);
       expect(result.content).toHaveLength(1);
-      
-      const completionResult = JSON.parse((result.content[0] as any).text);
-      expect(completionResult.suggestions).toBeDefined();
-      expect(completionResult.suggestions.some((s: any) => s.label === 'tasks')).toBe(true);
-      expect(completionResult.suggestions.some((s: any) => s.label === 'env')).toBe(true);
-    });
-  });
+      const text = (result.content[0] as any).text;
 
-  describe('tsk_get_examples', () => {
-    it('should return all examples by default', async () => {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'tsk_get_examples',
-          arguments: {}
-        }
-      };
+      // Should contain the matched title
+      expect(text).toContain(targetTitle);
 
-      const result = await handleToolCall(request);
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0]?.type).toBe('text');
-      expect((result.content[0] as any).text).toContain('Basic Task File');
-      expect((result.content[0] as any).text).toContain('Advanced Configuration');
+      // Should contain some content from that doc
+      const matchedDoc = tskReference.siteDocs.find(
+        (doc) => doc.title === targetTitle,
+      );
+      expect(text).toContain(matchedDoc?.content);
+
+      // Should not contain other titles
+      const otherTitles = tskReference.siteDocs
+        .filter((doc) => doc.title !== targetTitle)
+        .map((doc) => doc.title);
+
+      otherTitles.forEach((title) => {
+        if (title) expect(text).not.toContain(title);
+      });
     });
 
-    it('should return specific example type', async () => {
+    it("should search for content within documentation", async () => {
+      const searchTerm = "init";
       const request: CallToolRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'tsk_get_examples',
-          arguments: { type: 'basic' }
-        }
+          name: "tsk_get_site_docs",
+          arguments: { search: searchTerm },
+        },
       };
 
       const result = await handleToolCall(request);
       expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('Basic Task File');
-      expect((result.content[0] as any).text).not.toContain('Advanced Configuration');
-    });
-  });
+      const text = (result.content[0] as any).text;
 
-  describe('error handling', () => {
-    it('should handle unknown tool names', async () => {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'unknown_tool',
-          arguments: {}
-        }
-      };
+      // Should indicate search was performed
+      expect(text).toContain(`Search results for "${searchTerm}"`);
 
-      const result = await handleToolCall(request);
-      expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('Unknown tool');
+      // Should contain docs with the search term
+      const docsWithSearchTerm = tskReference.siteDocs.filter(
+        (doc) =>
+          typeof doc.content === "string" && doc.content.includes(searchTerm),
+      );
+
+      expect(docsWithSearchTerm.length).toBeGreaterThan(0);
+      docsWithSearchTerm.forEach((doc) => {
+        if (doc.title) expect(text).toContain(doc.title);
+      });
     });
 
-    it('should handle missing arguments for command lookup', async () => {
+    it("should filter by title and search content", async () => {
+      const titleFilter = "Installation";
+      const searchTerm = "brew";
+
       const request: CallToolRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'tsk_lookup_command',
-          arguments: {}
-        }
+          name: "tsk_get_site_docs",
+          arguments: {
+            title: titleFilter,
+            search: searchTerm,
+          },
+        },
       };
 
       const result = await handleToolCall(request);
       expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('command parameter is required');
+      const text = (result.content[0] as any).text;
+
+      // Should contain the title that matches
+      expect(text).toContain("Installation Guide");
+
+      // Should show search was performed
+      expect(text).toContain(`Search results for "${searchTerm}"`);
+
+      // Should have content with the search term
+      const matchedDoc = tskReference.siteDocs.find(
+        (doc) => doc.title === "Installation Guide",
+      );
+      expect(matchedDoc?.content).toContain(searchTerm);
+      expect(text).toContain(searchTerm);
     });
 
-    it('should handle invalid argument types', async () => {
+    it("should return error message when no docs match title filter", async () => {
       const request: CallToolRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'tsk_lookup_command',
-          arguments: { command: 123 }
-        }
+          name: "tsk_get_site_docs",
+          arguments: { title: "NonExistent" },
+        },
       };
 
       const result = await handleToolCall(request);
       expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('must be a string');
+      const text = (result.content[0] as any).text;
+      expect(text).toContain(
+        'No documentation found matching title "NonExistent"',
+      );
     });
 
-    it('should handle null arguments object', async () => {
+    it("should show message when no search results found", async () => {
       const request: CallToolRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'tsk_lookup_syntax',
-          arguments: null as any
-        }
+          name: "tsk_get_site_docs",
+          arguments: { search: "xyznonexistent" },
+        },
       };
 
       const result = await handleToolCall(request);
       expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('arguments object is required');
+      const text = (result.content[0] as any).text;
+      expect(text).toContain(
+        'No matches found for search term "xyznonexistent"',
+      );
     });
 
-    it('should handle invalid type parameter in examples', async () => {
+    it("should handle documentation without content", async () => {
+      // Temporarily remove content to test this case
+      const originalContent = tskReference.siteDocs[2]?.content;
+      if (tskReference.siteDocs[2]) {
+        delete tskReference.siteDocs[2].content;
+      }
+
       const request: CallToolRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'tsk_get_examples',
-          arguments: { type: 123 }
-        }
+          name: "tsk_get_site_docs",
+          arguments: { title: "Usage" },
+        },
       };
 
       const result = await handleToolCall(request);
       expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('type parameter must be a string');
-    });
-  });
+      const text = (result.content[0] as any).text;
+      expect(text).toContain("Content not yet fetched");
 
-  describe('advanced completion scenarios', () => {
-    it('should provide task-specific completions for tasks section', async () => {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'tsk_get_completion',
-          arguments: { 
-            context: '[tasks]',
-            line_prefix: ''
-          }
-        }
-      };
-
-      const result = await handleToolCall(request);
-      expect(result.content).toHaveLength(1);
-      
-      const completionResult = JSON.parse((result.content[0] as any).text);
-      expect(completionResult.suggestions).toBeDefined();
-      expect(completionResult.suggestions.some((s: any) => s.type === 'task')).toBe(true);
+      // Restore content
+      if (tskReference.siteDocs[2] && originalContent !== undefined) {
+        tskReference.siteDocs[2].content = originalContent;
+      }
     });
 
-    it('should handle line prefix context', async () => {
+    it("should handle unknown tool name", async () => {
       const request: CallToolRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'tsk_get_completion',
-          arguments: { 
-            context: '[tasks]',
-            line_prefix: '[tasks.'
-          }
-        }
+          name: "unknown_tool",
+          arguments: {},
+        },
       };
 
       const result = await handleToolCall(request);
       expect(result.content).toHaveLength(1);
-      
-      const completionResult = JSON.parse((result.content[0] as any).text);
-      expect(completionResult.suggestions).toBeDefined();
-      expect(completionResult.suggestions.some((s: any) => s.type === 'task')).toBe(true);
-    });
-  });
-
-  describe('syntax lookup variations', () => {
-    it('should find partial key matches', async () => {
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'tsk_lookup_syntax',
-          arguments: { key: 'env' }
-        }
-      };
-
-      const result = await handleToolCall(request);
-      expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('env');
+      const text = (result.content[0] as any).text;
+      expect(text).toContain("Error: Unknown tool: unknown_tool");
     });
 
-    it('should handle nested key lookup', async () => {
+    it("should handle invalid argument types gracefully", async () => {
       const request: CallToolRequest = {
-        method: 'tools/call',
+        method: "tools/call",
         params: {
-          name: 'tsk_lookup_syntax',
-          arguments: { key: 'dependencies' }
-        }
+          name: "tsk_get_site_docs",
+          arguments: {
+            title: 123 as any,
+            search: true as any,
+          },
+        },
+      };
+
+      const result = await handleToolCall(request);
+      // Should still work but treat non-strings as undefined
+      expect(result.content).toHaveLength(1);
+      expect(result.content[0]?.type).toBe("text");
+    });
+
+    it("should include lastFetched timestamp when available", async () => {
+      // Use a doc we know has a lastFetched date in our test data
+      const docWithTimestamp = tskReference.siteDocs.find(
+        (doc) => doc.lastFetched,
+      );
+      expect(docWithTimestamp).toBeDefined();
+
+      const request: CallToolRequest = {
+        method: "tools/call",
+        params: {
+          name: "tsk_get_site_docs",
+          arguments: { title: docWithTimestamp?.title },
+        },
       };
 
       const result = await handleToolCall(request);
       expect(result.content).toHaveLength(1);
-      expect((result.content[0] as any).text).toContain('dependencies');
+      const text = (result.content[0] as any).text;
+
+      // Should include the lastFetched timestamp in some format
+      expect(text).toMatch(/Last fetched: .+/);
+
+      // The timestamp should include the year from our test data
+      expect(text).toContain("2023");
     });
   });
 });
