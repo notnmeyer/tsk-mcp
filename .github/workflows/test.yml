@@ -19,4 +19,4 @@ jobs:
       - uses: Homebrew/actions/setup-homebrew@master
       - run: brew install notnmeyer/tsk/tsk
 
-      - run: tsk test:all
+      - run: tsk deps test:all
