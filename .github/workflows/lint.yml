@@ -11,12 +11,12 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: "22"
           cache: "npm"
       - uses: Homebrew/actions/setup-homebrew@master
-      - uses: actions/checkout@v3
       - run: brew install notnmeyer/tsk/tsk
 
       - run: tsk lint:check
